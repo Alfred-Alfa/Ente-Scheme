@@ -1,0 +1,90 @@
+/* Admin Navigation Styles */
+.admin-nav {
+  padding: 0.5rem 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Admin User Info */
+.admin-user-info {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  margin: 0 0.5rem 1rem;
+  background-color: rgba(13, 110, 253, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(13, 110, 253, 0.1);
+}
+
+.admin-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #0d6efd;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.admin-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-email {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Simplified Nav Section as a Link */
+.nav-section {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.nav-section:hover {
+  background-color: #e9ecef;
+  color: #0d6efd;
+}
+
+.nav-section.active {
+  background-color: #e7f1ff;
+  color: #0d6efd;
+  font-weight: 600;
+}
+
+.nav-section .nav-icon {
+  margin-right: 0.75rem;
+  color: #6c757d;
+  transition: color 0.2s;
+}
+
+.nav-section:hover .nav-icon,
+.nav-section.active .nav-icon {
+  color: #0d6efd;
+}

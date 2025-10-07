@@ -1,387 +1,168 @@
-import React, { useState, useEffect } from "react";
-import { User, MapPin, CreditCard, Users, FileText, Settings, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
-import "./register.css";
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { User, Mail, Lock, Eye, EyeOff, CheckCircle, ArrowRight } from 'lucide-react';
+import { API_ENDPOINTS, apiRequest } from '../config/api';
+import BackButton from './BackButton';
+import './Register.css';
 
-const districts = [
-  "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam", 
-  "Idukki", "Ernakulam", "Thrissur", "Palakkad", "Malappuram", 
-  "Kozhikode", "Wayanad", "Kannur", "Kasaragod"
-];
+const Particles = () => (
+  <canvas id="particles-canvas" className="particles"></canvas>
+);
 
-const panchayatSamples = ["Panchayat 1", "Panchayat 2", "Panchayat 3"];
+const FloatingShapes = () => (
+  <div className="floating-shapes">
+    <div className="shape shape1"></div>
+    <div className="shape shape2"></div>
+    <div className="shape shape3"></div>
+    <div className="shape shape4"></div>
+  </div>
+);
 
-const specialOptions = [
-  "Elderly", "Disabled", "Caregiver", "Orphaned", "Widow", "Single Parent"
-];
-
-function Register({ onRegister }) {
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState({
-    userId: "",
-    name: "",
-    dateOfBirth: "",
-    age: "",
-    gender: "",
-    address: "",
-    district: "",
-    panchayat: "",
-    areaType: "urban",
-    income: "",
-    rationCardType: "",
-    povertyStatus: "",
-    familyMembers: "",
-    dependents: "",
-    specialStatus: [],
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: ""
-  });
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    if (type === 'checkbox') {
-      setForm(prev => ({
-        ...prev,
-        [name]: checked 
-          ? [...prev[name], value]
-          : prev[name].filter(item => item !== value)
-      }));
-    } else {
-      setForm(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+const PasswordStrengthMeter = ({ password }) => {
+  const getStrength = () => {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    return score;
   };
 
-  const validateStep = () => {
+  const strength = getStrength();
+  const strengthMap = {
+    0: { text: '', color: '', width: '0%' },
+    1: { text: 'Weak', color: 'weak', width: '20%' },
+    2: { text: 'Fair', color: 'fair', width: '40%' },
+    3: { text: 'Good', color: 'good', width: '60%' },
+    4: { text: 'Strong', color: 'strong', width: '80%' },
+    5: { text: 'Very Strong', color: 'strong', width: '100%' },
+  };
+
+  const { text, color, width } = strengthMap[strength];
+
+  return (
+    <div className="password-strength-meter">
+      <div className={`strength-bar ${color}`} style={{ width }}></div>
+    </div>
+  );
+};
+
+function Register() {
+  const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const validate = () => {
     const newErrors = {};
-    
-    if (step === 0) {
-      if (!form.name) newErrors.name = 'Name is required';
-      if (!form.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
-      if (!form.gender) newErrors.gender = 'Gender is required';
-    } else if (step === 1) {
-      if (!form.address) newErrors.address = 'Address is required';
-      if (!form.district) newErrors.district = 'District is required';
-      if (!form.panchayat) newErrors.panchayat = 'Panchayat is required';
-    } else if (step === 2) {
-      if (!form.email) newErrors.email = 'Email is required';
-      else if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = 'Email is invalid';
-      if (!form.phone) newErrors.phone = 'Phone number is required';
-      if (!form.password) newErrors.password = 'Password is required';
-      else if (form.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
-      if (form.password !== form.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
+    if (!formData.username || formData.username.length < 3) newErrors.username = 'Username must be at least 3 characters.';
+    if (!/^[^@]+@[^@]+\.[^@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email address.';
+    if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters.';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const nextStep = () => {
-    if (validateStep()) {
-      setStep(prev => prev + 1);
-    }
-  };
-
-  const prevStep = () => {
-    setStep(prev => prev - 1);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (validateStep()) {
-      setSubmitting(true);
-      
-      try {
-        // Here you would typically make an API call to register the user
-        console.log('Form submitted:', form);
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Call the onRegister callback with the form data
-        onRegister(form);
-      } catch (error) {
-        console.error('Registration error:', error);
-        alert('Registration failed. Please try again.');
-      } finally {
-        setSubmitting(false);
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      const response = await apiRequest(API_ENDPOINTS.REGISTER, {
+        method: 'POST',
+        body: JSON.stringify({ username: formData.username, email: formData.email, password: formData.password }),
+      });
+      if (response.success) {
+        setIsSuccess(true);
+      } else {
+        setErrors({ form: response.error || 'Registration failed. Please try again.' });
       }
+    } catch (err) {
+      setErrors({ form: 'Network error. Please check your connection.' });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const renderStep = () => {
-    switch (step) {
-      case 0:
-        return (
-          <div className="form-step">
-            <h3>Personal Information</h3>
-            <div className="form-group">
-              <label>Full Name *</label>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Enter your full name"
-                className={errors.name ? 'error' : ''}
-              />
-              {errors.name && <span className="error-message">{errors.name}</span>}
-            </div>
-            
-            <div className="form-group">
-              <label>Date of Birth *</label>
-              <input
-                type="date"
-                name="dateOfBirth"
-                value={form.dateOfBirth}
-                onChange={handleChange}
-                className={errors.dateOfBirth ? 'error' : ''}
-              />
-              {errors.dateOfBirth && <span className="error-message">{errors.dateOfBirth}</span>}
-            </div>
-            
-            <div className="form-group">
-              <label>Gender *</label>
-              <select
-                name="gender"
-                value={form.gender}
-                onChange={handleChange}
-                className={errors.gender ? 'error' : ''}
-              >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-              {errors.gender && <span className="error-message">{errors.gender}</span>}
-            </div>
-          </div>
-        );
-        
-      case 1:
-        return (
-          <div className="form-step">
-            <h3>Address Information</h3>
-            <div className="form-group">
-              <label>Address *</label>
-              <textarea
-                name="address"
-                value={form.address}
-                onChange={handleChange}
-                placeholder="Enter your full address"
-                className={errors.address ? 'error' : ''}
-                rows="3"
-              />
-              {errors.address && <span className="error-message">{errors.address}</span>}
-            </div>
-            
-            <div className="form-group">
-              <label>District *</label>
-              <select
-                name="district"
-                value={form.district}
-                onChange={handleChange}
-                className={errors.district ? 'error' : ''}
-              >
-                <option value="">Select District</option>
-                {districts.map(district => (
-                  <option key={district} value={district}>{district}</option>
-                ))}
-              </select>
-              {errors.district && <span className="error-message">{errors.district}</span>}
-            </div>
-            
-            <div className="form-group">
-              <label>Panchayat *</label>
-              <select
-                name="panchayat"
-                value={form.panchayat}
-                onChange={handleChange}
-                className={errors.panchayat ? 'error' : ''}
-              >
-                <option value="">Select Panchayat</option>
-                {panchayatSamples.map(panchayat => (
-                  <option key={panchayat} value={panchayat}>{panchayat}</option>
-                ))}
-              </select>
-              {errors.panchayat && <span className="error-message">{errors.panchayat}</span>}
-            </div>
-            
-            <div className="form-group">
-              <label>Area Type</label>
-              <div className="radio-group">
-                <label>
-                  <input
-                    type="radio"
-                    name="areaType"
-                    value="urban"
-                    checked={form.areaType === 'urban'}
-                    onChange={handleChange}
-                  />
-                  Urban
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="areaType"
-                    value="rural"
-                    checked={form.areaType === 'rural'}
-                    onChange={handleChange}
-                  />
-                  Rural
-                </label>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 2:
-        return (
-          <div className="form-step">
-            <h3>Account Information</h3>
-            <div className="form-group">
-              <label>Email *</label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="Enter your email"
-                className={errors.email ? 'error' : ''}
-              />
-              {errors.email && <span className="error-message">{errors.email}</span>}
-            </div>
-            
-            <div className="form-group">
-              <label>Phone Number *</label>
-              <input
-                type="tel"
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="Enter your phone number"
-                className={errors.phone ? 'error' : ''}
-              />
-              {errors.phone && <span className="error-message">{errors.phone}</span>}
-            </div>
-            
-            <div className="form-group">
-              <label>Password *</label>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Create a password"
-                className={errors.password ? 'error' : ''}
-              />
-              {errors.password && <span className="error-message">{errors.password}</span>}
-            </div>
-            
-            <div className="form-group">
-              <label>Confirm Password *</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                placeholder="Confirm your password"
-                className={errors.confirmPassword ? 'error' : ''}
-              />
-              {errors.confirmPassword && (
-                <span className="error-message">{errors.confirmPassword}</span>
-              )}
-            </div>
-            
-            <div className="form-group">
-              <label>Special Status (if any)</label>
-              <div className="checkbox-group">
-                {specialOptions.map(option => (
-                  <label key={option} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      name="specialStatus"
-                      value={option}
-                      checked={form.specialStatus.includes(option)}
-                      onChange={handleChange}
-                    />
-                    {option}
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-        
-      default:
-        return null;
-    }
-  };
+  if (isSuccess) {
+    return (
+      <div className="register-container">
+        <Particles />
+        <FloatingShapes />
+        <div className="register-card success-container">
+          <div className="success-icon"><CheckCircle size={40} /></div>
+          <h1 className="success-title">Registration Successful!</h1>
+          <p className="success-message">Welcome to EnteScheme. You can now log in to discover schemes tailored for you.</p>
+          <Link to="/login" className="back-to-home-btn">Go to Login <ArrowRight size={20} /></Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="register-container">
-      <div className="register-header">
-        <h2>Create an Account</h2>
-        <p>Join us to access government schemes and benefits</p>
-      </div>
-      
-      <div className="progress-bar">
-        <div 
-          className="progress" 
-          style={{ width: `${(step + 1) * 33.33}%` }}
-        ></div>
-        <div className="step-indicator">
-          <div className={`step ${step >= 0 ? 'active' : ''}`}>1</div>
-          <div className={`step ${step >= 1 ? 'active' : ''}`}>2</div>
-          <div className={`step ${step >= 2 ? 'active' : ''}`}>3</div>
+    <div className="register-container page-container-with-back-button">
+      <BackButton />
+      <Particles />
+      <FloatingShapes />
+      <div className="register-card">
+        <div className="register-header">
+          <h1 className="register-title">Create Your Account</h1>
+          <p className="register-subtitle">Unlock personalized Kerala welfare schemes</p>
         </div>
-      </div>
-      
-      <form onSubmit={handleSubmit}>
-        {renderStep()}
-        
-        <div className="form-navigation">
-          {step > 0 && (
-            <button 
-              type="button" 
-              className="btn btn-secondary"
-              onClick={prevStep}
-              disabled={submitting}
-            >
-              <ChevronLeft size={18} /> Back
-            </button>
-          )}
-          
-          {step < 2 ? (
-            <button 
-              type="button" 
-              className="btn btn-primary"
-              onClick={nextStep}
-              disabled={submitting}
-            >
-              Next <ChevronRight size={18} />
-            </button>
-          ) : (
-            <button 
-              type="submit" 
-              className="btn btn-primary"
-              disabled={submitting}
-            >
-              {submitting ? 'Creating Account...' : 'Create Account'}
-            </button>
-          )}
-        </div>
-      </form>
-      
-      <div className="login-link">
-        Already have an account? <a href="#/login">Sign In</a>
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="input-group">
+            <span className="input-icon-left">
+              <User size={20} />
+            </span>
+            <input type="text" name="username" placeholder="Username" className="input-field" value={formData.username} onChange={handleChange} />
+            {errors.username && <span className="error-text">{errors.username}</span>}
+          </div>
+          <div className="input-group">
+            <span className="input-icon-left">
+              <Mail size={20} />
+            </span>
+            <input type="email" name="email" placeholder="Email Address" className="input-field" value={formData.email} onChange={handleChange} />
+            {errors.email && <span className="error-text">{errors.email}</span>}
+          </div>
+          <div className="input-group">
+            <span className="input-icon-left">
+              <Lock size={20} />
+            </span>
+            <input type={showPassword ? 'text' : 'password'} name="password" placeholder="Password" className="input-field" value={formData.password} onChange={handleChange} />
+            <span className="input-icon-right" onClick={() => setShowPassword(!showPassword)}>
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </span>
+            <PasswordStrengthMeter password={formData.password} />
+            {errors.password && <span className="error-text">{errors.password}</span>}
+          </div>
+          <div className="input-group">
+            <span className="input-icon-left">
+              <Lock size={20} />
+            </span>
+            <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" placeholder="Confirm Password" className="input-field" value={formData.confirmPassword} onChange={handleChange} />
+            <span className="input-icon-right" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </span>
+            {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
+          </div>
+          {errors.form && <span className="error-text submit-error">{errors.form}</span>}
+          <button type="submit" className="register-btn" disabled={loading}>
+            {loading ? 'Creating Account...' : 'Sign Up'}
+          </button>
+        </form>
+        <p className="login-link">
+          Already have an account? <Link to="/login">Sign In</Link>
+        </p>
       </div>
     </div>
   );

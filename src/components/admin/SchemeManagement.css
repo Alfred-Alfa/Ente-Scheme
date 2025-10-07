@@ -1,0 +1,177 @@
+/* Admin Page General Layout */
+.admin-page-container {
+  padding: 2rem;
+  background-color: #f9fafb;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1.5rem;
+}
+
+.admin-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.admin-header p {
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.add-scheme-btn {
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+.add-scheme-btn:hover { background-color: #0b5ed7; }
+
+.admin-toolbar {
+  margin-bottom: 1.5rem;
+}
+
+.search-wrapper {
+  position: relative;
+  max-width: 400px;
+}
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+.search-input:focus {
+  outline: none;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+/* Table Styles */
+.admin-table-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+.schemes-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.schemes-table th, .schemes-table td {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+.schemes-table th {
+  background-color: #f9fafb;
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+.schemes-table td {
+  color: #374151;
+}
+
+.action-buttons { display: flex; gap: 0.5rem; }
+.action-btn {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+.action-btn.edit:hover { background-color: #eff6ff; color: #3b82f6; }
+.action-btn.delete:hover { background-color: #fef2f2; color: #ef4444; }
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background-color: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-content h2 { margin-top: 0; }
+.modal-content fieldset {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.modal-content legend { font-weight: 600; padding: 0 0.5rem; }
+.modal-content label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; }
+.modal-content input[type="text"],
+.modal-content input[type="number"],
+.modal-content input[type="url"],
+.modal-content textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+.modal-content textarea { min-height: 80px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.checkbox-group { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; }
+.checkbox-group label { display: flex; align-items: center; gap: 0.5rem; font-weight: 400; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; }
+.modal-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.modal-btn.cancel { background-color: #e5e7eb; color: #374151; }
+.modal-btn.save { background-color: #0d6efd; color: white; }
+
+/* Delete Modal */
+.delete-modal-overlay { /* Same as modal-overlay */
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6);
+  display: flex; justify-content: center; align-items: center; z-index: 1001;
+}
+.delete-modal-content {
+  background: white; padding: 2.5rem; border-radius: 12px; text-align: center;
+  max-width: 450px;
+}
+.delete-modal-icon { color: #ef4444; margin-bottom: 1rem; }
+.delete-modal-actions { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; }
+.modal-btn.confirm-delete { background-color: #ef4444; color: white; }

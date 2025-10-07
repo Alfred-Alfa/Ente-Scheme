@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Shield } from 'lucide-react';
+import { API_ENDPOINTS, apiRequest } from '../config/api';
 
 const OTPVerification = (props) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -65,17 +66,32 @@ const OTPVerification = (props) => {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      if (otpString === '123456') {
+    try {
+      const data = await apiRequest(API_ENDPOINTS.VERIFY_OTP, {
+        method: 'POST',
+        body: JSON.stringify({ email: props.email, otp: otpString }),
+      });
+
+      if (data.success) {
+        // Mark email as verified in the database
+        await apiRequest(API_ENDPOINTS.VERIFY_EMAIL, {
+          method: 'POST',
+          body: JSON.stringify({ email: props.email }),
+        });
+
         props.onSuccess();
       } else {
-        setError('Invalid verification code. Please try again.');
+        setError(data.error || 'Invalid verification code. Please try again.');
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       }
-    }, 1500);
+    } catch (err) {
+      setError(err.message || 'Network error. Please check your connection and try again.');
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResend = async () => {
@@ -83,20 +99,18 @@ const OTPVerification = (props) => {
     setCanResend(false);
     setError('');
     try {
-      const response = await fetch('http://localhost:3001/api/send-otp', {
+      const data = await apiRequest(API_ENDPOINTS.SEND_OTP, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: props.email })
       });
-      const data = await response.json();
-      if (response.ok) {
+      
+      if (data.success) {
         alert("OTP resent to your email!");
       } else {
-        alert(data.error);
+        alert(data.error || "Failed to resend OTP");
       }
     } catch (error) {
-      console.error(error);
-      alert("Failed to resend OTP");
+      alert(error.message || "Failed to resend OTP");
     }
   };
 
