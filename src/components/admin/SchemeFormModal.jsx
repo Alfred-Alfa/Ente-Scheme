@@ -1,237 +1,141 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-
-const keralDistricts = [
-  'All', 'Thiruvananthapuram', 'Kollam', 'Pathanamthitta', 'Alappuzha', 'Kottayam',
-  'Idukki', 'Ernakulam', 'Thrissur', 'Palakkad', 'Malappuram', 'Kozhikode',
-  'Wayanad', 'Kannur', 'Kasaragod'
-];
-
-const documentOptions = ['Aadhaar Card', 'Ration Card', 'Income Certificate', 'Caste Certificate', 'Disability Certificate', 'Bank Passbook'];
-
-const maritalStatusOptions = ['Single', 'Married', 'Divorced', 'Widowed'];
-const rationCardTypes = ['AAY', 'PHH', 'NPHH', 'NPS'];
-const housingStatusOptions = ['Own House', 'Renting', 'Homeless'];
-const occupationOptions = ['Farmer', 'Fisherman', 'Artisan', 'Labourer', 'Student', 'Unemployed', 'Self Employed', 'Retired', 'Other'];
-const schemeCategories = ['Education', 'Healthcare', 'Agriculture', 'Housing', 'Employment', 'Welfare', 'Pension'];
+import { XIcon } from './icons';
+import FormField from './FormField';
+import CheckboxPill from './CheckboxPill';
 
 const SchemeFormModal = ({ isOpen, onClose, onSave, scheme }) => {
-  const initialState = {
-    schemeName: '',
-    department: '',
-    description: '',
-    schemeUrl: '',
-    category: '',
-    startDate: '',
-    endDate: '',
-    eligibility: {
-      minAge: '',
-      maxAge: '',
-      maxIncome: '',
-      gender: 'Any',
-      districts: [],
-      casteCategory: [],
-      requiresWidow: false,
-      requiresSeniorCitizen: false,
-      requiresDisabled: false,
-      requiresOrphan: false,
-      educationLevel: [],
-      occupation: [],
-      maritalStatus: [],
-      rationCardType: [],
-      isBPL: false,
-      housingStatus: [],
-      minMarks: '',
-    },
-    requiredDocuments: [],
-  };
+    const initialFormState = {
+        schemeName: '', department: '', description: '', url: '',
+        eligibility: {
+            age: { min: '', max: '' },
+            maxIncome: '',
+            gender: 'Any',
+            maritalStatus: [],
+            districts: [],
+            requiresBPL: false,
+            rationCardTypes: [],
+            casteCategories: [],
+            requiresDisability: false,
+            minDisabilityPercentage: '',
+            occupations: [],
+            educationLevels: [],
+            requiredDocuments: []
+        }
+    };
+    const [formData, setFormData] = useState(initialFormState);
 
-  const [formData, setFormData] = useState(initialState);
+    useEffect(() => {
+        if (isOpen) {
+            setFormData(scheme ? JSON.parse(JSON.stringify(scheme)) : initialFormState); // Deep copy
+        }
+    }, [scheme, isOpen]);
 
-  useEffect(() => {
-    if (scheme) {
-      setFormData({ ...initialState, ...scheme });
-    } else {
-      setFormData(initialState);
-    }
-  }, [scheme, isOpen]);
+    if (!isOpen) return null;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+    const handleInputChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        const keys = name.split('.');
 
-  const handleEligibilityChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      eligibility: {
-        ...prev.eligibility,
-        [name]: type === 'checkbox' ? checked : value,
-      }
-    }));
-  };
+        setFormData(prev => {
+            let updated = { ...prev };
+            let current = updated;
+            for(let i = 0; i < keys.length - 1; i++) {
+                current = current[keys[i]];
+            }
+            current[keys[keys.length - 1]] = type === 'checkbox' ? checked : value;
+            return updated;
+        });
+    };
 
-  const handleMultiSelectChange = (field, subfield, value) => {
-    const currentValues = subfield ? formData[field][subfield] : formData[field];
-    const newValues = currentValues.includes(value)
-      ? currentValues.filter(item => item !== value)
-      : [...currentValues, value];
-
-    if (subfield) {
-      setFormData(prev => ({ ...prev, [field]: { ...prev[field], [subfield]: newValues } }));
-    } else {
-      setFormData(prev => ({ ...prev, [field]: newValues }));
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-  
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <form onSubmit={handleSubmit}>
-          <button type="button" className="modal-close-btn" onClick={onClose}><X size={24} /></button>
-          <h2>{scheme ? 'Edit Scheme' : 'Add New Scheme'}</h2>
-          
-          <div className="modal-body">
-            <fieldset>
-              <legend>Basic Information</legend>
-              <div className="form-group">
-                <label>Scheme Name</label>
-                <input type="text" name="schemeName" value={formData.schemeName} onChange={handleChange} required />
-              </div>
-              <div className="form-group">
-                <label>Department</label>
-                <input type="text" name="department" value={formData.department} onChange={handleChange} required />
-              </div>
-              <div className="form-group">
-                <label>Description</label>
-                <textarea name="description" value={formData.description} onChange={handleChange}></textarea>
-              </div>
-              <div className="form-group">
-                <label>Official URL</label>
-                <input type="url" name="schemeUrl" value={formData.schemeUrl} onChange={handleChange} />
-              </div>
-              <div className="form-group">
-                <label>Category</label>
-                <select name="category" value={formData.category} onChange={handleChange} required>
-                  <option value="">Select a Category</option>
-                  {schemeCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
-              </div>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Start Date</label>
-                  <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} />
-                </div>
-                <div className="form-group">
-                  <label>End Date</label>
-                  <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} />
-                </div>
-              </div>
-            </fieldset>
+    const handleArrayChange = (e) => {
+        const { name, value, checked } = e.target;
+        const keys = name.split('.'); // e.g., 'eligibility.districts'
+        
+        setFormData(prev => {
+            let updated = JSON.parse(JSON.stringify(prev)); // Deep copy
+            let current = updated;
+            for (let i = 0; i < keys.length - 1; i++) {
+                current = current[keys[i]];
+            }
+            const arrayField = keys[keys.length - 1];
+            const currentArray = current[arrayField] || [];
             
-            <fieldset>
-              <legend>Eligibility Criteria</legend>
-              <div className="form-grid">
-                <div><label>Min Age</label><input type="number" name="minAge" value={formData.eligibility.minAge} onChange={handleEligibilityChange} /></div>
-                <div><label>Max Age</label><input type="number" name="maxAge" value={formData.eligibility.maxAge} onChange={handleEligibilityChange} /></div>
-                <div><label>Max Annual Income (₹)</label><input type="number" name="maxIncome" value={formData.eligibility.maxIncome} onChange={handleEligibilityChange} /></div>
-              </div>
+            if (checked) {
+                current[arrayField] = [...currentArray, value];
+            } else {
+                current[arrayField] = currentArray.filter(item => item !== value);
+            }
+            
+            return updated;
+        });
+    };
 
-              <label>Gender</label>
-              <div className="radio-group">
-                {['Any', 'Male', 'Female'].map(g => (
-                  <label key={g}><input type="radio" name="gender" value={g} checked={formData.eligibility.gender === g} onChange={handleEligibilityChange} /><span>{g}</span></label>
-                ))}
-              </div>
-              
-              <label>Districts</label>
-              <div className="checkbox-group">
-                  {keralDistricts.map(d => (
-                      <label key={d}><input type="checkbox" checked={formData.eligibility.districts.includes(d)} onChange={() => handleMultiSelectChange('eligibility', 'districts', d)} /><span>{d}</span></label>
-                  ))}
-              </div>
+    const handleSubmit = (e) => { e.preventDefault(); onSave(formData); };
+    
+    // Data for options
+    const keralDistricts = ['Thiruvananthapuram', 'Kollam', 'Pathanamthitta', 'Alappuzha', 'Kottayam', 'Idukki', 'Ernakulam', 'Thrissur', 'Palakkad', 'Malappuram', 'Kozhikode', 'Wayanad', 'Kannur', 'Kasaragod'];
+    const maritalStatuses = ['Single', 'Married', 'Divorced', 'Widowed'];
+    const rationTypes = ['APL', 'BPL', 'AAY', 'PHH', 'NPHH', 'NPS'];
+    const castes = ['SC', 'ST', 'OBC', 'General', 'General (EWS)'];
+    const occupations = ['Farmer', 'Fisherman', 'Artisan', 'Labourer', 'Student', 'Unemployed', 'Self Employed', 'Retired', 'Other'];
+    const educations = ['Below SSLC', 'SSLC', 'Plus Two', 'Graduate', 'Post Graduate', 'Currently Student'];
+    const documents = ['Aadhaar Card', 'Ration Card', 'Income Certificate', 'Caste Certificate', 'Disability Certificate', 'Bank Passbook', 'Educational Certificates'];
+    
+    return (
+        <div className="modal-overlay modal-overlay-animated">
+            <div className="modal-content modal-content-animated">
+                <header className="modal-header"><h2 className="modal-title">{scheme ? 'Edit Scheme' : 'Add New Scheme'}</h2><button onClick={onClose} className="modal-close-btn"><XIcon s={20}/></button></header>
+                <form onSubmit={handleSubmit} className="modal-form">
+                   <div className="modal-body">
+                        <fieldset>
+                            <legend className="modal-legend">Basic Scheme Details</legend>
+                            <div className="form-grid-2">
+                                <FormField label="Scheme Name"><input type="text" name="schemeName" value={formData.schemeName} onChange={handleInputChange} className="form-input" required /></FormField>
+                                <FormField label="Department"><input type="text" name="department" value={formData.department} onChange={handleInputChange} className="form-input" required /></FormField>
+                                <FormField label="Description"><textarea name="description" value={formData.description} onChange={handleInputChange} rows="3" className="form-textarea"></textarea></FormField>
+                                <FormField label="Official URL"><input type="url" name="url" value={formData.url} onChange={handleInputChange} className="form-input" /></FormField>
+                            </div>
+                        </fieldset>
 
-              <label>Caste Category</label>
-               <div className="checkbox-group">
-                  {['SC', 'ST', 'OBC', 'General'].map(c => (
-                      <label key={c}><input type="checkbox" checked={formData.eligibility.casteCategory.includes(c)} onChange={() => handleMultiSelectChange('eligibility', 'casteCategory', c)} /><span>{c}</span></label>
-                  ))}
-              </div>
-
-              <div className="checkbox-group special-categories">
-                <label><input type="checkbox" name="requiresWidow" checked={formData.eligibility.requiresWidow} onChange={handleEligibilityChange} /><span>Widow / Single Parent</span></label>
-                <label><input type="checkbox" name="requiresSeniorCitizen" checked={formData.eligibility.requiresSeniorCitizen} onChange={handleEligibilityChange} /><span>Senior Citizen (60+)</span></label>
-                <label><input type="checkbox" name="requiresDisabled" checked={formData.eligibility.requiresDisabled} onChange={handleEligibilityChange} /><span>Differently Abled</span></label>
-                <label><input type="checkbox" name="requiresOrphan" checked={formData.eligibility.requiresOrphan} onChange={handleEligibilityChange} /><span>Orphan / Caregiver</span></label>
+                        <fieldset className="fieldset-separator">
+                            <legend className="modal-legend">Eligibility Criteria</legend>
+                            <div className="space-y-6">
+                                <div className="form-grid-4">
+                                    <FormField label="Min Age" tip="Leave blank for no minimum age."><input type="number" name="eligibility.age.min" value={formData.eligibility.age.min} onChange={handleInputChange} className="form-input" /></FormField>
+                                    <FormField label="Max Age" tip="Leave blank for no maximum age."><input type="number" name="eligibility.age.max" value={formData.eligibility.age.max} onChange={handleInputChange} className="form-input" /></FormField>
+                                    <FormField label="Max Annual Income (₹)" tip="Maximum household income allowed."><input type="number" name="eligibility.maxIncome" value={formData.eligibility.maxIncome} onChange={handleInputChange} className="form-input" /></FormField>
+                                    <FormField label="Gender"><select name="eligibility.gender" value={formData.eligibility.gender} onChange={handleInputChange} className="form-select"><option>Any</option><option>Male</option><option>Female</option><option>Other</option></select></FormField>
+                                </div>
+                                <FormField label="Marital Status" tip="Select all that apply. Leave blank if not applicable.">
+                                    <div className="form-field-group">{maritalStatuses.map(s => <CheckboxPill key={s} id={`ms-${s}`} name="eligibility.maritalStatus" value={s} checked={formData.eligibility.maritalStatus.includes(s)} onChange={handleArrayChange}>{s}</CheckboxPill>)}</div>
+                                </FormField>
+                                <FormField label="Applicable Districts" tip="Select all that apply. Leave blank for statewide schemes.">
+                                    <div className="form-field-group districts">{keralDistricts.map(d => <CheckboxPill key={d} id={`dist-${d}`} name="eligibility.districts" value={d} checked={formData.eligibility.districts.includes(d)} onChange={handleArrayChange}>{d}</CheckboxPill>)}</div>
+                                </FormField>
+                                <div className="form-grid-2">
+                                    <div>
+                                        <label className="checkbox-label"><input type="checkbox" name="eligibility.requiresBPL" checked={formData.eligibility.requiresBPL} onChange={handleInputChange} /> Must be Below Poverty Line (BPL)</label>
+                                        <FormField label="Ration Card Types" tip="Select applicable ration card types.">
+                                            <div className="form-field-group">{rationTypes.map(r => <CheckboxPill key={r} id={`rat-${r}`} name="eligibility.rationCardTypes" value={r} checked={formData.eligibility.rationCardTypes.includes(r)} onChange={handleArrayChange}>{r}</CheckboxPill>)}</div>
+                                        </FormField>
+                                    </div>
+                                    <div>
+                                        <label className="checkbox-label"><input type="checkbox" name="eligibility.requiresDisability" checked={formData.eligibility.requiresDisability} onChange={handleInputChange} /> Must be Differently-Abled</label>
+                                        {formData.eligibility.requiresDisability && <FormField label="Min Disability %" tip="Minimum disability percentage to qualify."><input type="number" name="eligibility.minDisabilityPercentage" value={formData.eligibility.minDisabilityPercentage} onChange={handleInputChange} className="form-input" /></FormField>}
+                                    </div>
+                                </div>
+                                <FormField label="Caste Categories" tip="Select applicable caste categories."><div className="form-field-group castes">{castes.map(c => <CheckboxPill key={c} id={`caste-${c}`} name="eligibility.casteCategories" value={c} checked={formData.eligibility.casteCategories.includes(c)} onChange={handleArrayChange}>{c}</CheckboxPill>)}</div></FormField>
+                                <FormField label="Target Occupations"><div className="form-field-group occupations">{occupations.map(o => <CheckboxPill key={o} id={`occ-${o}`} name="eligibility.occupations" value={o} checked={formData.eligibility.occupations.includes(o)} onChange={handleArrayChange}>{o}</CheckboxPill>)}</div></FormField>
+                                <FormField label="Education Levels"><div className="form-field-group educations">{educations.map(e => <CheckboxPill key={e} id={`edu-${e}`} name="eligibility.educationLevels" value={e} checked={formData.eligibility.educationLevels.includes(e)} onChange={handleArrayChange}>{e}</CheckboxPill>)}</div></FormField>
+                                <FormField label="Required Documents"><div className="form-field-group documents">{documents.map(d => <CheckboxPill key={d} id={`doc-${d}`} name="eligibility.requiredDocuments" value={d} checked={formData.eligibility.requiredDocuments.includes(d)} onChange={handleArrayChange}>{d}</CheckboxPill>)}</div></FormField>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <footer className="modal-footer"><button type="button" onClick={onClose} className="modal-btn cancel">Cancel</button><button type="submit" className="modal-btn save">Save Scheme</button></footer>
+                </form>
             </div>
-
-            <label>Marital Status</label>
-            <div className="checkbox-group">
-              {maritalStatusOptions.map(status => (
-                <label key={status}><input type="checkbox" checked={formData.eligibility.maritalStatus.includes(status)} onChange={() => handleMultiSelectChange('eligibility', 'maritalStatus', status)} /><span>{status}</span></label>
-              ))}
-            </div>
-
-            <label>Ration Card Type</label>
-            <div className="checkbox-group">
-              {rationCardTypes.map(type => (
-                <label key={type}><input type="checkbox" checked={formData.eligibility.rationCardType.includes(type)} onChange={() => handleMultiSelectChange('eligibility', 'rationCardType', type)} /><span>{type}</span></label>
-              ))}
-            </div>
-
-            <label>Housing Status</label>
-            <div className="checkbox-group">
-              {housingStatusOptions.map(status => (
-                <label key={status}><input type="checkbox" checked={formData.eligibility.housingStatus.includes(status)} onChange={() => handleMultiSelectChange('eligibility', 'housingStatus', status)} /><span>{status}</span></label>
-              ))}
-            </div>
-
-            <label>Occupation</label>
-            <div className="checkbox-group">
-              {occupationOptions.map(occ => (
-                <label key={occ}><input type="checkbox" checked={formData.eligibility.occupation.includes(occ)} onChange={() => handleMultiSelectChange('eligibility', 'occupation', occ)} /><span>{occ}</span></label>
-              ))}
-            </div>
-
-            <label>Below Poverty Line (BPL)</label>
-            <div className="checkbox-group">
-              <label><input type="checkbox" name="isBPL" checked={formData.eligibility.isBPL} onChange={handleEligibilityChange} /><span>Required</span></label>
-            </div>
-
-            {formData.eligibility.occupation.includes('Student') && (
-              <>
-                <label>Minimum Marks (%)</label>
-                <input type="number" name="minMarks" value={formData.eligibility.minMarks} onChange={handleEligibilityChange} />
-              </>
-            )}
-            </fieldset>
-
-            <fieldset>
-              <legend>Required Documents</legend>
-              <div className="checkbox-group">
-                {documentOptions.map(doc => (
-                  <label key={doc}><input type="checkbox" checked={formData.requiredDocuments.includes(doc)} onChange={() => handleMultiSelectChange('requiredDocuments', null, doc)} /><span>{doc}</span></label>
-                ))}
-              </div>
-            </fieldset>
-          </div>
-
-          <div className="modal-actions">
-            <button type="button" className="modal-btn cancel" onClick={onClose}>Cancel</button>
-            <button type="submit" className="modal-btn save">Save Scheme</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default SchemeFormModal;
